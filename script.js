@@ -77,7 +77,9 @@ const firebaseConfig = {
   
     db.ref(`${room}/signals`).on("child_added", async snapshot => {
       const { type, data } = snapshot.val();
-      if (type === "offer" && !peers[data.sdp.sdp]) {
+      if (!data) return;
+  
+      if (type === "offer" && !peers[data.sdp?.sdp]) {
         const newPC = new RTCPeerConnection();
         localStream.getTracks().forEach(track => newPC.addTrack(track, localStream));
   
@@ -100,26 +102,33 @@ const firebaseConfig = {
         sendSignal(room, "answer", { sdp: answer });
   
         peers[data.sdp.sdp] = newPC;
-      } else if (type === "answer") {
+      } else if (type === "answer" && data?.sdp) {
         await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-      } else if (type === "candidate") {
+      } else if (type === "candidate" && data?.candidate) {
         const candidate = new RTCIceCandidate(data.candidate);
         try {
           pc.addIceCandidate(candidate);
           Object.values(peers).forEach(p => p.addIceCandidate(candidate));
-        } catch (e) {}
+        } catch (e) {
+          console.warn("ICE candidate error", e);
+        }
       }
+    });
+  
+    // チャット受信
+    db.ref(`${room}/chat`).on("child_added", snap => {
+      addChat(snap.val());
     });
   };
   
   // === 画面共有 ===
   shareBtn.onclick = async () => {
     const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-    const track = screenStream.getVideoTracks()[0];
-    const sender = [...peers, { replaceTrack: () => {} }]
-      .flatMap(p => p.getSenders?.() ?? [])
-      .find(s => s.track.kind === "video");
-    if (sender) sender.replaceTrack(track);
+    const screenTrack = screenStream.getVideoTracks()[0];
+    Object.values(peers).forEach(peer => {
+      const sender = peer.getSenders().find(s => s.track.kind === "video");
+      if (sender) sender.replaceTrack(screenTrack);
+    });
   };
   
   // === チャット送信 ===
@@ -130,12 +139,4 @@ const firebaseConfig = {
     db.ref(`${room}/chat`).push(msg);
     chatInput.value = "";
   };
-  
-  // === チャット受信 ===
-  roomInput.addEventListener("input", () => {
-    const room = roomInput.value.trim();
-    db.ref(`${room}/chat`).on("child_added", snap => {
-      addChat(snap.val());
-    });
-  });
   
