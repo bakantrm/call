@@ -58,7 +58,7 @@ const firebaseConfig = {
   }
   
   function sendSignal(room, type, data) {
-    db.ref(`${room}/signals`).push({ type, data });
+    db.ref(`${room}/signals`).push({ type, data, senderName: userName });
   }
   
   function addChat(message) {
@@ -98,7 +98,7 @@ const firebaseConfig = {
   
     pc.ontrack = event => {
       if (!remoteStreamExists) {
-        createVideoContainer("", event.streams[0], "remote-video");
+        createVideoContainer("接続中...", event.streams[0], "remote-video");
         remoteStreamExists = true;
       }
     };
@@ -108,8 +108,8 @@ const firebaseConfig = {
     sendSignal(room, "offer", { sdp: offer });
   
     db.ref(`${room}/signals`).on("child_added", async snapshot => {
-      const { type, data } = snapshot.val();
-      if (!data) return;
+      const { type, data, senderName } = snapshot.val();
+      if (!data || senderName === userName) return;
   
       if (type === "offer" && !peers[data.sdp?.sdp]) {
         const newPC = new RTCPeerConnection();
@@ -119,7 +119,7 @@ const firebaseConfig = {
   
         newPC.ontrack = event => {
           if (!remoteStreamExists) {
-            createVideoContainer("", event.streams[0], "remote-video");
+            createVideoContainer(senderName || "匿名", event.streams[0], "remote-video");
             remoteStreamExists = true;
           }
         };
@@ -188,4 +188,3 @@ const firebaseConfig = {
     db.ref(`${room}/chat`).push(`${userName}: ${msg}`);
     chatInput.value = "";
   };
-  
