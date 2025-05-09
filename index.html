@@ -1,40 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Jitsi Call</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-    }
-    #container {
-      width: 100%;
-      height: 90vh;
-      margin-top: 1em;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>匿名通話ルーム</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>通話ルームに参加</h1>
-  <input type="text" id="room" placeholder="ルーム名を入力" />
-  <button onclick="join()">参加する</button>
-  <div id="container"></div>
+  <div class="container">
+    <h1>匿名通話ルーム</h1>
+    <input type="text" id="room-input" placeholder="ルーム名を入力" />
+    <button id="join-btn">入室</button>
 
-  <script>
-    function join() {
-      const room = document.getElementById("room").value.trim();
-      if (!room) return alert("ルーム名を入力してください");
-      const domain = "meet.jit.si";
-      const options = {
-        roomName: room,
-        parentNode: document.getElementById("container"),
-        width: "100%",
-        height: "100%",
-      };
-      new JitsiMeetExternalAPI(domain, options);
-    }
-  </script>
-  <script src="https://meet.jit.si/external_api.js"></script>
+    <div id="video-area" class="hidden">
+      <div id="videos"></div>
+      <div class="controls">
+        <button id="share-screen-btn">🖥️ 画面共有</button>
+        <input type="text" id="chat-input" placeholder="チャットを入力…" />
+        <button id="send-chat-btn">送信</button>
+      </div>
+      <div id="chat-box"></div>
+    </div>
+  </div>
+
+  <!-- Firebase & Script -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
