@@ -28,9 +28,10 @@ const firebaseConfig = {
   let userName = "";
   let isMicOn = true;
   let isCamOn = true;
+  let remoteStreamExists = false;
   
   function createVideoContainer(name, stream = null, id = null) {
-    if (document.getElementById(id)) return;
+    if (id && document.getElementById(id)) return;
     const container = document.createElement("div");
     container.className = "video-container";
     if (id) container.id = id;
@@ -96,7 +97,10 @@ const firebaseConfig = {
     };
   
     pc.ontrack = event => {
-      createVideoContainer("相手", event.streams[0], "remote-video");
+      if (!remoteStreamExists) {
+        createVideoContainer("", event.streams[0], "remote-video");
+        remoteStreamExists = true;
+      }
     };
   
     const offer = await pc.createOffer();
@@ -114,7 +118,10 @@ const firebaseConfig = {
         }
   
         newPC.ontrack = event => {
-          createVideoContainer("相手", event.streams[0], "remote-video");
+          if (!remoteStreamExists) {
+            createVideoContainer("", event.streams[0], "remote-video");
+            remoteStreamExists = true;
+          }
         };
   
         newPC.onicecandidate = e => {
