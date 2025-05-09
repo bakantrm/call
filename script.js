@@ -26,6 +26,8 @@ const firebaseConfig = {
   let localStream;
   const peers = {};
   let userName = "";
+  let isMicOn = true;
+  let isCamOn = true;
   
   function createVideoContainer(name, stream = null) {
     const container = document.createElement("div");
@@ -76,6 +78,7 @@ const firebaseConfig = {
       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       createVideoContainer(userName, localStream);
     } catch {
+      localStream = null;
       createVideoContainer(userName); // カメラなし
     }
   
@@ -140,6 +143,25 @@ const firebaseConfig = {
     db.ref(`${room}/chat`).on("child_added", snap => {
       addChat(snap.val());
     });
+  
+    // マイク・ビデオON/OFFボタン追加
+    const micBtn = document.createElement("button");
+    micBtn.textContent = "🎤 ミュート";
+    micBtn.onclick = () => {
+      isMicOn = !isMicOn;
+      localStream.getAudioTracks().forEach(track => track.enabled = isMicOn);
+      micBtn.textContent = isMicOn ? "🎤 ミュート" : "🔇 ミュート解除";
+    };
+    videoArea.querySelector(".controls").appendChild(micBtn);
+  
+    const camBtn = document.createElement("button");
+    camBtn.textContent = "📷 カメラOFF";
+    camBtn.onclick = () => {
+      isCamOn = !isCamOn;
+      localStream.getVideoTracks().forEach(track => track.enabled = isCamOn);
+      camBtn.textContent = isCamOn ? "📷 カメラOFF" : "🙈 カメラON";
+    };
+    videoArea.querySelector(".controls").appendChild(camBtn);
   };
   
   shareBtn.onclick = async () => {
