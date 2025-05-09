@@ -1,19 +1,40 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>通話サンプル - PeerJS</title>
+  <meta charset="UTF-8" />
+  <title>Jitsi Call</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+    }
+    #container {
+      width: 100%;
+      height: 90vh;
+      margin-top: 1em;
+    }
+  </style>
 </head>
 <body>
-  <h1>PeerJS 通話</h1>
-  <p>あなたのID: <span id="my-id">取得中...</span></p>
-  <video id="my-video" autoplay muted></video>
-  <video id="partner-video" autoplay></video>
+  <h1>通話ルームに参加</h1>
+  <input type="text" id="room" placeholder="ルーム名を入力" />
+  <button onclick="join()">参加する</button>
+  <div id="container"></div>
 
-  <input type="text" id="partner-id" placeholder="相手のID">
-  <button id="call-btn">通話開始</button>
-
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <script src="script.js"></script>
+  <script>
+    function join() {
+      const room = document.getElementById("room").value.trim();
+      if (!room) return alert("ルーム名を入力してください");
+      const domain = "meet.jit.si";
+      const options = {
+        roomName: room,
+        parentNode: document.getElementById("container"),
+        width: "100%",
+        height: "100%",
+      };
+      new JitsiMeetExternalAPI(domain, options);
+    }
+  </script>
+  <script src="https://meet.jit.si/external_api.js"></script>
 </body>
 </html>
