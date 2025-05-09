@@ -29,9 +29,11 @@ const firebaseConfig = {
   let isMicOn = true;
   let isCamOn = true;
   
-  function createVideoContainer(name, stream = null) {
+  function createVideoContainer(name, stream = null, id = null) {
+    if (document.getElementById(id)) return;
     const container = document.createElement("div");
     container.className = "video-container";
+    if (id) container.id = id;
   
     if (stream) {
       const video = document.createElement("video");
@@ -76,10 +78,10 @@ const firebaseConfig = {
   
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      createVideoContainer(userName, localStream);
+      createVideoContainer(userName, localStream, "local-video");
     } catch {
       localStream = null;
-      createVideoContainer(userName); // カメラなし
+      createVideoContainer(userName, null, "local-video");
     }
   
     const pc = new RTCPeerConnection();
@@ -94,9 +96,7 @@ const firebaseConfig = {
     };
   
     pc.ontrack = event => {
-      if (!videos.querySelector(".remote-video")) {
-        createVideoContainer("相手", event.streams[0]);
-      }
+      createVideoContainer("相手", event.streams[0], "remote-video");
     };
   
     const offer = await pc.createOffer();
@@ -114,9 +114,7 @@ const firebaseConfig = {
         }
   
         newPC.ontrack = event => {
-          if (!videos.querySelector(".remote-video")) {
-            createVideoContainer("相手", event.streams[0]);
-          }
+          createVideoContainer("相手", event.streams[0], "remote-video");
         };
   
         newPC.onicecandidate = e => {
@@ -148,12 +146,11 @@ const firebaseConfig = {
       addChat(snap.val());
     });
   
-    // マイク・ビデオON/OFFボタン追加
     const micBtn = document.createElement("button");
     micBtn.textContent = "🎤 ミュート";
     micBtn.onclick = () => {
       isMicOn = !isMicOn;
-      localStream.getAudioTracks().forEach(track => track.enabled = isMicOn);
+      if (localStream) localStream.getAudioTracks().forEach(track => track.enabled = isMicOn);
       micBtn.textContent = isMicOn ? "🎤 ミュート" : "🔇 ミュート解除";
     };
     videoArea.querySelector(".controls").appendChild(micBtn);
@@ -162,7 +159,7 @@ const firebaseConfig = {
     camBtn.textContent = "📷 カメラOFF";
     camBtn.onclick = () => {
       isCamOn = !isCamOn;
-      localStream.getVideoTracks().forEach(track => track.enabled = isCamOn);
+      if (localStream) localStream.getVideoTracks().forEach(track => track.enabled = isCamOn);
       camBtn.textContent = isCamOn ? "📷 カメラOFF" : "🙈 カメラON";
     };
     videoArea.querySelector(".controls").appendChild(camBtn);
