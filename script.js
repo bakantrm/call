@@ -13,6 +13,7 @@ const firebaseConfig = {
   const db = firebase.database();
   
   // === DOM取得 ===
+  const nameInput = document.getElementById("name-input");
   const roomInput = document.getElementById("room-input");
   const joinBtn = document.getElementById("join-btn");
   const videoArea = document.getElementById("video-area");
@@ -22,17 +23,33 @@ const firebaseConfig = {
   const sendChatBtn = document.getElementById("send-chat-btn");
   const chatBox = document.getElementById("chat-box");
   
-  // === WebRTC ===
   let localStream;
   const peers = {};
+  let userName = "";
   
-  async function startCamera() {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    const myVideo = document.createElement("video");
-    myVideo.srcObject = localStream;
-    myVideo.autoplay = true;
-    myVideo.muted = true;
-    videos.appendChild(myVideo);
+  function createVideoContainer(name, stream = null) {
+    const container = document.createElement("div");
+    container.className = "video-container";
+  
+    if (stream) {
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.muted = name === userName;
+      container.appendChild(video);
+    } else {
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = name.charAt(0).toUpperCase();
+      container.appendChild(avatar);
+    }
+  
+    const label = document.createElement("div");
+    label.className = "name-label";
+    label.textContent = name;
+    container.appendChild(label);
+  
+    videos.appendChild(container);
   }
   
   function sendSignal(room, type, data) {
@@ -45,18 +62,27 @@ const firebaseConfig = {
     chatBox.appendChild(p);
   }
   
-  // === ルーム参加 ===
   joinBtn.onclick = async () => {
     const room = roomInput.value.trim();
-    if (!room) return alert("ルーム名を入力してください");
+    userName = nameInput.value.trim();
+    if (!room || !userName) return alert("名前とルーム名を入力してください");
   
     joinBtn.disabled = true;
     roomInput.disabled = true;
+    nameInput.disabled = true;
     videoArea.classList.remove("hidden");
-    await startCamera();
+  
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      createVideoContainer(userName, localStream);
+    } catch {
+      createVideoContainer(userName); // カメラなし
+    }
   
     const pc = new RTCPeerConnection();
-    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    if (localStream) {
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    }
   
     pc.onicecandidate = event => {
       if (event.candidate) {
@@ -65,10 +91,7 @@ const firebaseConfig = {
     };
   
     pc.ontrack = event => {
-      const remoteVideo = document.createElement("video");
-      remoteVideo.srcObject = event.streams[0];
-      remoteVideo.autoplay = true;
-      videos.appendChild(remoteVideo);
+      createVideoContainer("相手", event.streams[0]);
     };
   
     const offer = await pc.createOffer();
@@ -81,13 +104,12 @@ const firebaseConfig = {
   
       if (type === "offer" && !peers[data.sdp?.sdp]) {
         const newPC = new RTCPeerConnection();
-        localStream.getTracks().forEach(track => newPC.addTrack(track, localStream));
+        if (localStream) {
+          localStream.getTracks().forEach(track => newPC.addTrack(track, localStream));
+        }
   
         newPC.ontrack = event => {
-          const remoteVideo = document.createElement("video");
-          remoteVideo.srcObject = event.streams[0];
-          remoteVideo.autoplay = true;
-          videos.appendChild(remoteVideo);
+          createVideoContainer("相手", event.streams[0]);
         };
   
         newPC.onicecandidate = e => {
@@ -115,13 +137,11 @@ const firebaseConfig = {
       }
     });
   
-    // チャット受信
     db.ref(`${room}/chat`).on("child_added", snap => {
       addChat(snap.val());
     });
   };
   
-  // === 画面共有 ===
   shareBtn.onclick = async () => {
     const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     const screenTrack = screenStream.getVideoTracks()[0];
@@ -131,12 +151,11 @@ const firebaseConfig = {
     });
   };
   
-  // === チャット送信 ===
   sendChatBtn.onclick = () => {
     const msg = chatInput.value.trim();
     if (!msg) return;
     const room = roomInput.value.trim();
-    db.ref(`${room}/chat`).push(msg);
+    db.ref(`${room}/chat`).push(`${userName}: ${msg}`);
     chatInput.value = "";
   };
   
