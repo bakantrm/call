@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Site</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>通話サンプル - PeerJS</title>
 </head>
 <body>
-  <h1>Hello GitHub Pages!</h1>
+  <h1>PeerJS 通話</h1>
+  <p>あなたのID: <span id="my-id">取得中...</span></p>
+  <video id="my-video" autoplay muted></video>
+  <video id="partner-video" autoplay></video>
+
+  <input type="text" id="partner-id" placeholder="相手のID">
+  <button id="call-btn">通話開始</button>
+
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
