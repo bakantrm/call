@@ -94,7 +94,9 @@ const firebaseConfig = {
     };
   
     pc.ontrack = event => {
-      createVideoContainer("相手", event.streams[0]);
+      if (!videos.querySelector(".remote-video")) {
+        createVideoContainer("相手", event.streams[0]);
+      }
     };
   
     const offer = await pc.createOffer();
@@ -112,7 +114,9 @@ const firebaseConfig = {
         }
   
         newPC.ontrack = event => {
-          createVideoContainer("相手", event.streams[0]);
+          if (!videos.querySelector(".remote-video")) {
+            createVideoContainer("相手", event.streams[0]);
+          }
         };
   
         newPC.onicecandidate = e => {
