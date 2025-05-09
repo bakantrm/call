@@ -142,7 +142,9 @@ const firebaseConfig = {
   
         peers[data.sdp.sdp] = newPC;
       } else if (type === "answer" && data?.sdp) {
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        if (pc.signalingState === "have-local-offer") {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        }
       } else if (type === "candidate" && data?.candidate) {
         const candidate = new RTCIceCandidate(data.candidate);
         try {
@@ -193,4 +195,3 @@ const firebaseConfig = {
     db.ref(`${room}/chat`).push(`${userName}: ${msg}`);
     chatInput.value = "";
   };
-  
